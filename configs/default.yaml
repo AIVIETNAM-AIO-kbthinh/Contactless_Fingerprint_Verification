@@ -1,0 +1,106 @@
+# Tham số fpsys (giá trị khởi đầu, sẽ hiệu chỉnh trên ảnh thật / tập dev).
+# Các mục pipeline, normalize, enhance, skeleton, minutiae ảnh hưởng tới đặc trưng → nằm trong cfg_hash.
+pipeline: {source: contactless}          # contactless | contactless_crop | contact
+detect:
+  method: yolo                           # yolo | otsu (ablation otsu_crop: phân đoạn da Otsu trên toàn ảnh)
+  weights: models/best.pt
+  conf: 0.5
+  pad: 0.10                              # nới mỗi phía thêm pad × kích thước box
+  imgsz: 640
+  tie_conf_delta: 0.10
+  tta_rotate: true
+normalize:
+  skin_method: grabcut                   # grabcut | otsu_cr | fixed_ycrcb
+  mask_work_width: 384
+  grabcut_iters: 5
+  mask_erode_px: 6                       # px ở độ phân giải mask_work_width
+  sat_level: 250
+  sat_dilate_px: 5
+  tip_end_frac: 0.15
+  unwarp: false                          # 2026-11-03, dev Tống An: true làm minutiae kém ổn định (mask GrabCut dao động → hình trụ dao động); EER dev 39.7% → 34.3% khi tắt
+  unwarp_max_angle_deg: 65
+  unwarp_smooth_rows: 31                 # cửa sổ median filter cho c(y), r(y)
+  target_period: 9.0
+  period_block: 64
+  period_min: 4
+  period_max: 48                         # ảnh chụp cận (~8 cm, 12 MP) có chu kỳ ~30–35 px
+  period_min_cycles: 3                   # khối FFT cần ≥ số chu kỳ này, không đủ thì thu nhỏ ảnh ×½
+  scale_norm: true                       # false = giữ scale=1 (ablation no_scale_norm)
+  scale_min: 0.25
+  scale_max: 3.0
+  contact_block: 16                      # source=contact: mask từ độ lệch chuẩn khối
+  contact_std_frac: 0.25                 #   ngưỡng = frac × phân vị 95 của độ lệch chuẩn khối
+quality:  {min_brightness: 40, max_brightness: 220, max_sat_ratio: 0.15, min_band_energy: 0.20}
+enhance:
+  method: hong                           # hong | reference (fingerprint-enhancer, ablation ref_enhancer)
+  channel: gray                          # gray | green
+  invert: true
+  flatten_sigma: 2.5                     # bội số của target_period; 0 = tắt
+  clahe: {clip_limit: 2.0, tile: 8}
+  block: 16
+  orient_sigma: 14.0                     # 2026-11-03, dev: vân ảnh không chạm chỉ ~2 mức xám, cần làm mượt hướng mạnh hơn; EER dev 34.3% → 25.7%
+  freq_block: 32
+  gabor_k: 0.65
+  gabor_gamma: 1.0                       # < 1: kernel dài theo vân (thử 0.5 trên dev: không cải thiện)
+  n_angles: 16
+  min_coherence: 0.3
+  min_valid_area: 0.15                   # tỷ lệ so với diện tích ảnh chuẩn hóa
+skeleton: {min_component_px: 30, max_hole_px: 20, spur_len_px: 10, min_segment_px: 15}
+minutiae:
+  border_px: 12
+  trace_px: 10
+  shift_frac: 0.5                        # dời minutia về đỉnh vân (× ridge_period), giúp đối ngẫu ending/bifurcation
+  break_px: 10
+  break_angle_deg: 45                    # "hướng gần đối nhau": |Δθ − π| ≤ giá trị này
+  bridge_px: 8
+  spur_px: 8
+  cluster_px: 10
+  cluster_max: 4
+  min_minutiae: 12
+matcher:
+  method: mcc                            # mcc | hough
+  mcc:
+    radius: 70
+    ns: 16
+    nd: 6
+    sigma_s: 9.333                       # 28/3
+    sigma_d: 0.698                       # 2π/9
+    mu_psi: 0.01
+    tau_psi: 400
+    hull_offset: 50
+    min_valid_cells: 0.75
+    min_neighbors: 2
+    min_common_cells: 0.6                # tỷ lệ ô chung tối thiểu để so hai cylinder
+    max_dir_diff_deg: 90
+    min_np: 4
+    max_np: 12
+    mu_p: 20
+    tau_p: 0.4
+    # Hai mở rộng so với bài báo (đặt scale_tol=0, support=mean để quay về nguyên bản):
+    #   scale_tol: dung sai tương đối của chênh lệch khoảng cách (sai số tỷ lệ giữa 2 lần chụp)
+    #   support: weighted = hỗ trợ là trung bình ρ có trọng số λ (cặp rác không làm loãng)
+    relax: {n_iter: 5, w: 0.5, mu1: 5.0, tau1: -1.6, scale_tol: 0.06, support: weighted,
+            mu2_deg: 15, tau2: -30, mu3_deg: 15, tau3: -30}
+  hough:
+    theta_step_deg: 10
+    xy_step_px: 8
+    scales: [0.90, 0.95, 1.00, 1.05, 1.10]
+    max_rotation_deg: 45
+    top_k: 3
+    match_dist_px: 15
+    match_angle_deg: 20
+enroll:   {min_templates: 2, min_consistency: 0.15}
+verify:   {threshold: 0.10, fusion: max}   # max | mean_top2; threshold thay bằng giá trị từ metrics.json (tập dev)
+fusion:   {enabled: false, model: models/embed.onnx, w: 0.5}   # M8
+store:    {path: data/store.json}
+eval:     {dev_fraction: 0.4, target_far: 0.01, n_bootstrap: 1000}
+guide:                                   # hướng dẫn trực tiếp khi chụp (python -m demo); cần hiệu chỉnh
+  min_tip_px: 300                        # bề rộng box đầu ngón tối thiểu (px) để vân đủ phân giải
+  max_box_frac: 0.85                     # box cao hơn tỷ lệ này của khung → quá gần
+  edge_margin_frac: 0.02                 # box chạm biên khung → lệch khỏi khung
+  min_ridges_across: 20                  # bề rộng box / chu kỳ vân tối thiểu (ít hơn → chưa thấy vân)
+  stable_frac: 0.08                      # tâm box dịch quá tỷ lệ này của bề rộng box → đang rung
+  ready_frames: 4                        # số lần phân tích đạt liên tiếp để báo "sẵn sàng"
+  enroll_samples: 3                      # số mẫu chụp khi đăng ký
+  data_dir: data/demo                    # danh sách người dùng + kho template của demo
+seed: 42

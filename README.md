@@ -85,6 +85,31 @@ python -m demo --camera http://192.168.1.5:8080/video # điện thoại làm cam
 > làm camera qua Wi‑Fi (Android: app *IP Webcam*, nhập `http://<ip>:8080/video`), hoặc chụp bằng
 > điện thoại rồi mở file gốc.
 
+## Backend & app (`python -m server`, `mobile/`)
+
+Backend FastAPI bọc API của `fpsys`. Template lưu trong SQLite (`data/server.db`), mã hóa bằng
+Fernet. Mọi request cần header `X-API-Key`.
+
+```bash
+.venv/Scripts/python -m pip install -e ".[server]"
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# PowerShell: $env:FPSYS_DB_KEY="<khóa vừa tạo>"; $env:FPSYS_API_KEY="<mật khẩu tùy chọn>"
+python -m server [--port 8000] [--set verify.threshold=0.12]    # tài liệu API: http://localhost:8000/docs
+```
+
+Giữ nguyên `FPSYS_DB_KEY` giữa các lần chạy: đổi khóa thì không giải mã được template cũ.
+
+| Method | Path | Kết quả |
+| --- | --- | --- |
+| POST | `/check` (`image`) | `{ok, n_minutiae}` hoặc `{ok: false, code, message}` |
+| POST | `/users/{name}/fingers/{finger}/enroll` (`images` ×N) | `{kept, total}` |
+| POST | `/users/{name}/fingers/{finger}/verify` (`image`) | `{score, threshold, accept}` |
+| GET | `/users` | `[{name, fingers}]` |
+| DELETE | `/users/{name}` | 204 |
+
+`CaptureError` → 422 `{code, message}` (câu hướng dẫn tiếng Việt lấy từ `demo/session.py::HINTS`).
+Chưa đăng ký → 404; template khác `cfg_hash` → 409. App Flutter: xem [mobile/README.md](mobile/README.md).
+
 ## Đánh giá
 
 Dữ liệu tự thu đặt ở `data/own/`, tên file `{subject}_{finger}_{session}_{cond}_{sample}.jpg`

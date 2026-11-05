@@ -23,12 +23,13 @@ dependencies = [
 dev = ["pytest", "ruff"]
 ablation = ["fingerprint-enhancer"]
 embed = ["onnxruntime"]
+server = ["fastapi", "uvicorn", "python-multipart", "cryptography", "httpx"]
 
 [project.scripts]
 fpsys = "fpsys.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["fpsys*"]
+include = ["fpsys*", "server*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

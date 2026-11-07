@@ -85,7 +85,7 @@ class _EnrollScreenState extends State<EnrollScreen> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _finger,
+          initialValue: _finger,
           decoration: const InputDecoration(labelText: 'Ngón'),
           items: [
             for (final e in fingers.entries)

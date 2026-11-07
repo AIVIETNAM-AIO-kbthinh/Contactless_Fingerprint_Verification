@@ -74,7 +74,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       appBar: AppBar(title: const Text('Xác thực vân tay')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         DropdownButtonFormField<String>(
-          value: _name,
+          initialValue: _name,
           decoration: const InputDecoration(labelText: 'Người dùng'),
           items: [
             for (final u in _users)
@@ -88,7 +88,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _finger,
+          initialValue: _finger,
           decoration: const InputDecoration(labelText: 'Ngón'),
           items: [
             for (final f in _fingersOf)

@@ -1,5 +1,7 @@
 // Chụp đầu ngón: camera sau, độ phân giải tối đa, bật đèn, chạm để lấy nét.
 // Trả về đường dẫn file JPEG gốc qua Navigator.pop (null nếu hủy).
+import 'dart:math';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -29,8 +31,15 @@ class _CaptureScreenState extends State<CaptureScreen> {
           orElse: () => cams.first);
       final c = CameraController(back, ResolutionPreset.max, enableAudio: false);
       await c.initialize();
+      // plugin giữ torchEnabled=true qua các lần mở camera nên bỏ qua lệnh bật: tắt trước để đặt lại
+      await c.setFlashMode(FlashMode.off);
       await c.setFlashMode(FlashMode.torch);
-      if (!mounted) return c.dispose();
+      // camera chính chỉ lấy nét từ ~10 cm: zoom để ngón đủ to mà không phải đưa gần hơn
+      await c.setZoomLevel(min(2.0, await c.getMaxZoomLevel()));
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
       setState(() => _c = c);
     } catch (e) {
       setState(() => _error = 'Không mở được camera: $e');
@@ -93,7 +102,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   const Padding(
                     padding: EdgeInsets.all(12),
                     child: Text(
-                      'Một ngón, mặt bụng ngón hướng vào camera · cách 8–15 cm · '
+                      'Một ngón, mặt bụng ngón hướng vào camera · cách 10–15 cm · '
                       'chạm vào đầu ngón trên màn hình để lấy nét',
                       textAlign: TextAlign.center,
                     ),

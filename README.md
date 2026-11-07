@@ -15,8 +15,12 @@ uv pip install --python .venv/Scripts/python.exe -e ".[dev]"
 # (tùy chọn, cho ablation ref_enhancer) uv pip install fingerprint-enhancer
 ```
 
-Weights YOLO: sao chép `yolo11n_640/weights/best.pt` → `models/best.pt` (đã làm ở M0; thư mục
-`models/`, `data/`, `results/`, `yolo11n_640/` được gitignore).
+Weights YOLO: `yolo11n_640/weights/best.pt` có sẵn trong repo; trên máy mới cần chép sang
+`models/best.pt` (thư mục `models/`, `data/`, `results/` được gitignore):
+
+```powershell
+New-Item -ItemType Directory -Force models; Copy-Item yolo11n_640\weights\best.pt models\best.pt
+```
 
 > Không cài `opencv-contrib-python` (xung đột `cv2` với bản `ultralytics` kéo theo). Code không
 > dùng `cv2.ximgproc`.
@@ -98,6 +102,11 @@ python -m server [--port 8000] [--set verify.threshold=0.12]    # tài liệu AP
 ```
 
 Giữ nguyên `FPSYS_DB_KEY` giữa các lần chạy: đổi khóa thì không giải mã được template cũ.
+
+Ảnh thật chụp bằng điện thoại hiện cho điểm khớp thấp (cùng ngón thường chỉ 0,10–0,22), nên với
+`enroll.min_consistency` mặc định (0,15) việc đăng ký hay báo `INCONSISTENT_ENROLL`. Để demo, chạy
+`python -m server --set enroll.min_consistency=0.08`. Giá trị này chưa hiệu chỉnh trên tập dev; khi
+demo hãy thử cả ngón khác để chắc chắn bị TỪ CHỐI.
 
 | Method | Path | Kết quả |
 | --- | --- | --- |

@@ -1,47 +1,54 @@
 # App điện thoại (Flutter)
 
 App chụp đầu ngón tay rồi gửi lên backend (`python -m server`) để **đăng ký** hoặc **xác thực**.
-Toàn bộ xử lý vân tay chạy trên server; app chỉ chụp ảnh và hiện kết quả.
+Toàn bộ xử lý vân tay chạy trên server; app chỉ chụp ảnh và hiện kết quả. Đã thử trên Android
+(Samsung SM-M556B, Android 16); bản iOS chưa được thử.
 
 ## Cài đặt lần đầu (Windows, Android)
 
-1. Cài [Flutter SDK](https://docs.flutter.dev/get-started/install/windows/mobile), thêm `flutter\bin`
-   vào `PATH`.
-2. Cài [Android Studio](https://developer.android.com/studio). Mở *SDK Manager* và cài *Android SDK*
-   cùng *Command-line Tools*. Chạy `flutter doctor --android-licenses`, rồi `flutter doctor` cho tới
-   khi mục Android có dấu ✓.
-3. Trên điện thoại Android: *Cài đặt → Thông tin điện thoại*, bấm 7 lần vào *Số hiệu bản tạo* để bật
-   chế độ nhà phát triển. Sau đó bật *Gỡ lỗi USB* và cắm cáp vào máy tính.
-4. Tạo các thư mục nền tảng. Lệnh này không ghi đè `lib/` và `pubspec.yaml` đã có:
+1. Cài [Flutter SDK](https://docs.flutter.dev/get-started/install/windows/mobile) vào thư mục **ngoài
+   repo**, ví dụ `D:\flutter` (không đặt trong thư mục dự án: SDK nặng ~1,4 GB và có `.git` riêng).
+   Thêm `D:\flutter\bin` vào `PATH`, rồi **đóng hẳn VS Code/terminal và mở lại** để nhận `PATH` mới.
+2. Cài [Android Studio](https://developer.android.com/studio). Trong *More Actions → SDK Manager →
+   SDK Tools*, tích *Android SDK Command-line Tools (latest)* rồi *Apply*. Chạy
+   `flutter doctor --android-licenses` (công cụ mới có thể báo "--licenses is no longer needed", không
+   sao), rồi `flutter doctor` cho tới khi mục *Android toolchain* có dấu ✓. Mục *Visual Studio* báo
+   thiếu thì bỏ qua (chỉ cần khi làm app Windows).
+3. Trên điện thoại Android: *Cài đặt → Thông tin điện thoại → Thông tin phần mềm*, bấm 7 lần vào
+   *Số hiệu bản tạo* để bật chế độ nhà phát triển, rồi bật *Gỡ lỗi USB*. Cắm cáp, bấm **Cho phép**
+   trên điện thoại. `flutter devices` phải hiện tên máy.
+4. Tải các package của app:
 
-   ```bash
+   ```powershell
    cd mobile
-   flutter create . --platforms android,ios --project-name fpsys_app
    flutter pub get
    ```
 
-5. Sửa `android/app/src/main/AndroidManifest.xml`:
-   - Trong thẻ `<manifest>`, ngay trước `<application>`, thêm:
+Thư mục `android/` đã có sẵn trong repo, kèm quyền camera, quyền mạng và cho phép gọi `http://`
+trong mạng LAN (`android/app/src/main/AndroidManifest.xml`).
 
-     ```xml
-     <uses-permission android:name="android.permission.CAMERA"/>
-     <uses-permission android:name="android.permission.INTERNET"/>
-     ```
-
-   - Thêm `android:usesCleartextTraffic="true"` vào thẻ `<application ...>`. Cần dòng này để gọi
-     được server `http://` trong mạng LAN.
-6. Plugin `camera` cần `minSdkVersion` 21 trở lên. Bản Flutter mới đã mặc định như vậy; nếu báo
-   lỗi thì đặt `minSdk = 21` trong `android/app/build.gradle(.kts)`.
-7. (iOS, cần máy Mac) Thêm `NSCameraUsageDescription` vào `ios/Runner/Info.plist`.
+(iOS, cần máy Mac) Thêm `NSCameraUsageDescription` và ngoại lệ App Transport Security cho `http://`
+vào `ios/Runner/Info.plist`.
 
 ## Chạy
 
-1. Trên máy tính, chạy server (xem README gốc, mục "Backend & app"), rồi lấy IP mạng LAN bằng
-   `ipconfig`, ví dụ `192.168.1.5`.
-2. Điện thoại và máy tính phải dùng **cùng Wi-Fi**. Nếu điện thoại không gọi được server, mở cổng
-   8000 trên Windows Firewall.
-3. `flutter run`. Trong app, vào ⚙ **Cài đặt**, nhập `http://192.168.1.5:8000` và API key
-   (giá trị `FPSYS_API_KEY`).
+1. Chạy server trên máy tính (README gốc, mục "Backend & app").
+2. Chạy app: `flutter run` (trong thư mục `mobile`). Lần build đầu mất vài phút.
+3. Kết nối app với server, chọn một cách:
+   - **Qua cáp USB (ổn định nhất):** chạy
+     `& "$env:LOCALAPPDATA\Android\sdk\platform-tools\adb.exe" reverse tcp:8000 tcp:8000`, trong app
+     nhập địa chỉ `http://localhost:8000`. Chạy lại lệnh mỗi lần cắm lại cáp.
+   - **Qua Wi-Fi:** điện thoại và máy tính cùng một Wi-Fi; lấy IP Wi-Fi của máy tính bằng `ipconfig`,
+     nhập `http://<IP>:8000`. Mở cổng 8000 (PowerShell **Administrator**), và đặt Wi-Fi là mạng Private
+     nếu đang Public:
+
+     ```powershell
+     New-NetFirewallRule -DisplayName "fpsys server" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Private
+     Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory Private
+     ```
+
+4. Trong app, vào ⚙ **Cài đặt**, nhập địa chỉ server và API key (giá trị `FPSYS_API_KEY`). Mở
+   **Người dùng**: hiện "Chưa có ai đăng ký" là đã kết nối.
 
 ## Cách dùng
 
@@ -49,16 +56,28 @@ Toàn bộ xử lý vân tay chạy trên server; app chỉ chụp ảnh và hi�
   không thấy ngón sẽ bị báo lý do và phải chụp lại.
 - **Xác thực:** chọn người và ngón, chụp 1 tấm. App hiện CHẤP NHẬN hoặc TỪ CHỐI, kèm điểm và ngưỡng.
 - **Người dùng:** xem danh sách, xóa người không muốn lưu dữ liệu nữa.
-- Khi chụp: đèn flash tự bật. Đặt đầu ngón vào khung oval, cách 8–15 cm, rồi **chạm vào đầu ngón trên
-  màn hình** để lấy nét trước khi bấm Chụp.
+- Khi chụp: đèn tự bật, camera tự zoom 2x. Đặt đầu ngón vào khung oval, cách **10–15 cm** (camera chính
+  không lấy nét được gần hơn), mặt bụng ngón nhìn thẳng camera, **chạm vào giữa đầu ngón** để lấy nét,
+  chờ 1 giây rồi bấm Chụp. Giữ cùng tư thế cho cả 3 mẫu đăng ký.
+
+## Xử lý sự cố
+
+| Hiện tượng | Cách xử lý |
+| --- | --- |
+| `flutter` không nhận | `PATH` chưa có `...\flutter\bin`, hoặc chưa mở lại VS Code/terminal |
+| `flutter devices` không thấy điện thoại | Đổi cáp (cáp chỉ sạc không truyền dữ liệu), chọn chế độ USB *Truyền tệp*, bật *Gỡ lỗi USB*, bấm *Cho phép* |
+| Build lỗi `did not install NDK 28.2.13676358` | `& "$env:LOCALAPPDATA\Android\sdk\cmdline-tools\latest\bin\android.exe" sdk install ndk/28.2.13676358` rồi build lại |
+| App báo "Không kết nối được server" | Server chưa chạy, khác Wi-Fi, tường lửa chặn, hoặc dùng cách qua cáp USB ở trên |
+| Đăng ký luôn báo các mẫu không khớp | Chạy server với `--set enroll.min_consistency=0.08` (README gốc) |
 
 ## Cấu trúc
 
 | File | Nội dung |
 | --- | --- |
 | `lib/api.dart` | Gọi 5 endpoint của server, lưu địa chỉ server và API key |
-| `lib/capture_screen.dart` | Camera: độ phân giải tối đa, bật đèn, chạm để lấy nét, khung oval |
+| `lib/capture_screen.dart` | Camera: độ phân giải tối đa, bật đèn, zoom 2x, chạm để lấy nét, khung oval |
 | `lib/enroll_screen.dart` | Luồng đăng ký 3 mẫu |
 | `lib/verify_screen.dart` | Luồng xác thực |
 | `lib/users_screen.dart` | Danh sách và xóa người dùng |
 | `lib/main.dart` | Trang chủ và trang Cài đặt |
+| `android/gradle.properties` | `kotlin.incremental=false`: tránh lỗi Kotlin khi dự án và cache package ở hai ổ đĩa khác nhau |

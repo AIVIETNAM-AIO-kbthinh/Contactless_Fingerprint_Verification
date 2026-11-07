@@ -1,0 +1,2 @@
+# script chạy trên VPS Linux: giữ LF dù commit từ Windows
+*.sh text eol=lf

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+import threading
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
@@ -19,6 +20,8 @@ MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 def create_app(store: SqliteStore, api_key: str) -> FastAPI:
     cfg = store.cfg
+    # shortcut: xử lý tuần tự từng ảnh (~450 MB RAM/ảnh 12 MP), tăng worker khi VPS có thêm RAM/CPU
+    extract_lock = threading.Lock()
 
     def require_key(x_api_key: Annotated[str, Header()] = "") -> None:
         if not secrets.compare_digest(x_api_key.encode(), api_key.encode()):
@@ -39,11 +42,12 @@ def create_app(store: SqliteStore, api_key: str) -> FastAPI:
         data = f.file.read(MAX_IMAGE_BYTES + 1)
         if len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(413, "Ảnh lớn hơn 20 MB")
-        try:
-            img = fpsys.load_image(data)
-        except (UnidentifiedImageError, OSError) as e:
-            raise HTTPException(400, "Không đọc được ảnh") from e
-        return fpsys.extract(img, cfg)
+        with extract_lock:
+            try:
+                img = fpsys.load_image(data)
+            except (UnidentifiedImageError, OSError) as e:
+                raise HTTPException(400, "Không đọc được ảnh") from e
+            return fpsys.extract(img, cfg)
 
     def check_finger(finger: str) -> None:
         if finger not in FINGERS:

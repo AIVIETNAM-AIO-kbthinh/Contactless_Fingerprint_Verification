@@ -119,6 +119,31 @@ demo hãy thử cả ngón khác để chắc chắn bị TỪ CHỐI.
 `CaptureError` → 422 `{code, message}` (câu hướng dẫn tiếng Việt lấy từ `demo/session.py::HINTS`).
 Chưa đăng ký → 404; template khác `cfg_hash` → 409. App Flutter: xem [mobile/README.md](mobile/README.md).
 
+### Triển khai lên VPS (chạy 24/7, HTTPS)
+
+Cần VPS Ubuntu 22.04/24.04, tối thiểu 1 vCPU / 1 GB RAM / 20 GB disk, mở cổng 22, 80, 443 (kiểm tra cả
+tường lửa trên trang quản lý của nhà cung cấp VPS). Không cần tên miền: script dùng `<IP>.sslip.io` và
+Caddy tự xin chứng chỉ HTTPS.
+
+```bash
+sudo git clone https://github.com/AIVIETNAM-AIO-kbthinh/Contactless_Fingerprint_Verification.git /opt/fpsys
+cd /opt/fpsys && sudo bash deploy/setup.sh
+```
+
+Nếu repo private, GitHub sẽ hỏi đăng nhập: nhập username và một Personal Access Token thay cho mật
+khẩu. Lần đầu script mất 10–20 phút (tải torch). Cuối cùng script in ra địa chỉ `https://...sslip.io`
+và lệnh build APK có sẵn API key.
+
+- **Dịch vụ:** `fpsys` (server, chỉ nghe `127.0.0.1:8000`) và `caddy` (HTTPS) tự khởi động lại khi
+  lỗi hoặc khi VPS reboot.
+- **Xem log:** `journalctl -u fpsys -f`. **Khởi động lại:** `sudo systemctl restart fpsys`.
+- **Cập nhật code:** `cd /opt/fpsys && sudo git pull && sudo bash deploy/setup.sh` (giữ nguyên khóa và
+  dữ liệu).
+- **Khóa và dữ liệu:** `/etc/fpsys.env` (`FPSYS_DB_KEY`, `FPSYS_API_KEY`) và `/var/lib/fpsys/server.db`.
+  Hãy sao lưu cả hai: mất `FPSYS_DB_KEY` là mất toàn bộ dữ liệu đã đăng ký.
+- Server xử lý **từng ảnh một** để VPS 1 GB không hết RAM; nhiều người chụp cùng lúc thì phải chờ nhau
+  (~3–6 giây mỗi ảnh trên 1 vCPU).
+
 ## Đánh giá
 
 Dữ liệu tự thu đặt ở `data/own/`, tên file `{subject}_{finger}_{session}_{cond}_{sample}.jpg`

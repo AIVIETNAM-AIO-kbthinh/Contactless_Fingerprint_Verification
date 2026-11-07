@@ -14,6 +14,10 @@ const fingers = {
 
 const enrollSamples = 3; // guide.enroll_samples trong configs/default.yaml
 
+// Gắn lúc build APK: --dart-define=SERVER_URL=https://... --dart-define=API_KEY=...
+const _defaultUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'http://192.168.1.5:8000');
+const _defaultKey = String.fromEnvironment('API_KEY');
+
 class ApiError implements Exception {
   final String message;
   final String? code; // ErrorCode của fpsys khi server trả 422
@@ -29,7 +33,7 @@ class Api {
 
   static Future<Api> load() async {
     final p = await SharedPreferences.getInstance();
-    return Api(p.getString('url') ?? 'http://192.168.1.5:8000', p.getString('key') ?? '');
+    return Api(p.getString('url') ?? _defaultUrl, p.getString('key') ?? _defaultKey);
   }
 
   static Future<void> save(String url, String key) async {

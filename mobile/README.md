@@ -50,6 +50,29 @@ vào `ios/Runner/Info.plist`.
 4. Trong app, vào ⚙ **Cài đặt**, nhập địa chỉ server và API key (giá trị `FPSYS_API_KEY`). Mở
    **Người dùng**: hiện "Chưa có ai đăng ký" là đã kết nối.
 
+## Build APK để phát hành (người dùng chỉ cần cài APK)
+
+Sau khi triển khai server lên VPS (README gốc, mục "Triển khai lên VPS"), chạy lệnh mà
+`deploy/setup.sh` in ra. Lệnh có dạng:
+
+```powershell
+cd mobile
+flutter build apk --release --split-per-abi --dart-define=SERVER_URL=https://<IP>.sslip.io --dart-define=API_KEY=<key>
+```
+
+File cần gửi: `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`. Người dùng cài là dùng được
+ngay, không cần nhập địa chỉ hay API key, không cần cáp hay chung Wi-Fi.
+
+- Khi cài, Android sẽ hỏi cho phép **cài ứng dụng không rõ nguồn gốc**; Play Protect có thể cảnh báo,
+  chọn "Vẫn cài đặt". Nếu đang có bản cài bằng `flutter run`, gỡ bản đó trước.
+- APK được ký bằng khóa debug của máy build. Muốn cập nhật app mà không phải gỡ, hãy build bản mới
+  trên **cùng máy**.
+- **Ai có file APK đều lấy được API key**, nên chỉ gửi APK cho người tin cậy. Nếu lộ, đổi
+  `FPSYS_API_KEY` trong `/etc/fpsys.env` trên VPS, `sudo systemctl restart fpsys`, rồi build lại APK.
+- Không có `--dart-define` (ví dụ khi `flutter run`), app vẫn mặc định `http://192.168.1.5:8000` như
+  trước. Giá trị nhập trong ⚙ **Cài đặt** luôn được ưu tiên, nên vẫn đổi qua lại giữa VPS và máy tính
+  được.
+
 ## Cách dùng
 
 - **Đăng ký:** nhập tên, chọn ngón, chụp 3 mẫu. Mỗi mẫu được server kiểm tra ngay; mẫu mờ, tối hoặc

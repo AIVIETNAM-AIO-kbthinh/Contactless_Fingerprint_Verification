@@ -32,17 +32,22 @@ def select_enrollment(templates: list[Template], cfg: Config | None = None) -> l
     if len(templates) == 1:
         return list(templates)
     S = consistency_matrix(templates, cfg)
-    med = np.nanmedian(S, axis=1)
+    if ec.consistency == "median":
+        med = np.nanmedian(S, axis=1)
+    elif ec.consistency == "max":  # các mẫu được phép khác góc nhau, chỉ loại mẫu lạc hẳn
+        med = np.nanmax(S, axis=1)
+    else:
+        raise ValueError(f"enroll.consistency không hợp lệ: {ec.consistency!r}")
     kept = []
     for i, t in enumerate(templates):
         if med[i] >= ec.min_consistency:
             kept.append(t)
         else:
-            log.info("Loại mẫu enroll #%d: trung vị điểm %.3f < %.3f", i, med[i],
+            log.info("Loại mẫu enroll #%d: điểm %.3f < %.3f", i, med[i],
                      ec.min_consistency)
     if len(kept) < ec.min_templates:
         raise CaptureError(ErrorCode.INCONSISTENT_ENROLL,
-                           f"chỉ {len(kept)} mẫu nhất quán (trung vị: "
+                           f"chỉ {len(kept)} mẫu nhất quán (điểm: "
                            f"{', '.join(f'{m:.3f}' for m in med)})")
     return kept
 

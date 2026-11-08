@@ -103,10 +103,13 @@ python -m server [--port 8000] [--set verify.threshold=0.12]    # tài liệu AP
 
 Giữ nguyên `FPSYS_DB_KEY` giữa các lần chạy: đổi khóa thì không giải mã được template cũ.
 
-Ảnh thật chụp bằng điện thoại hiện cho điểm khớp thấp (cùng ngón thường chỉ 0,10–0,22), nên với
-`enroll.min_consistency` mặc định (0,15) việc đăng ký hay báo `INCONSISTENT_ENROLL`. Để demo, chạy
-`python -m server --set enroll.min_consistency=0.08`. Giá trị này chưa hiệu chỉnh trên tập dev; khi
-demo hãy thử cả ngón khác để chắc chắn bị TỪ CHỐI.
+Trên ảnh thật chụp bằng điện thoại, minutiae (MCC) cho điểm rất thấp: cùng ngón có trung vị 0,027, gần
+mức nhiễu. `deploy/setup.sh` vì vậy bật so khớp SIFT: `--set sift.enabled=true --set matcher.method=sift
+--set enroll.consistency=max --set enroll.min_consistency=0.30 --set verify.threshold=0.30`. Các ngưỡng
+này **chưa hiệu chỉnh trên tập dev**: chúng được chọn từ 8 ảnh cùng buổi, gấp khoảng hai lần điểm cao
+nhất của ảnh lật gương (0,167). Khi demo hãy thử cả ngón khác để chắc chắn bị TỪ CHỐI. Chạy server trên
+máy tính mà không có các cờ này thì vẫn dùng MCC; hai cách dùng template khác nhau nên phải đăng ký lại
+khi đổi.
 
 | Method | Path | Kết quả |
 | --- | --- | --- |
@@ -188,6 +191,8 @@ Các khóa config thêm vào `configs/default.yaml` (đều có giá trị trả
 
 | Khóa | Mặc định | Lý do |
 | --- | --- | --- |
+| `sift.*`, `matcher.method=sift` | tắt | So khớp SIFT trên ảnh đã làm phẳng sáng (`fpsys/match_sift.py`). Trên 8 ảnh thật: AUC 0.99 so với 0.91 của MCC. Mặc định tắt nên eval không đổi. |
+| `enroll.consistency` | `median` | `max`: giữ mẫu nếu khớp ít nhất một mẫu khác, để các mẫu đăng ký được khác góc nhau. `median` = như plan. |
 | `matcher.mcc.relax.scale_tol` | 0.06 | LSS-R gốc phạt chênh lệch khoảng cách tuyệt đối (`mu1 = 5 px`), nên sai số tỷ lệ 5% giữa hai lần chụp làm điểm tụt từ ~0.9 xuống 0.10. Trừ đi dung sai tương đối trước khi áp sigmoid. `0` = như bài báo. |
 | `matcher.mcc.relax.support` | `weighted` | Hỗ trợ trong relaxation = trung bình ρ·λ có trọng số λ, thay vì chia cho `n_R − 1`. Cặp rác (λ nhỏ) không còn làm loãng cặp thật: test 20% điểm thêm/bớt tăng từ 0.41 lên 0.61, impostor ngẫu nhiên vẫn < 0.02. `mean` = như bài báo. |
 | `minutiae.shift_frac` | 0.5 | Dời ending tiến ½ chu kỳ, bifurcation lùi ½ chu kỳ dọc θ, để ending trên vân và bifurcation đối ngẫu trên rãnh trùng vị trí (≤ 3 px). Nếu không dời, chúng lệch nhau khoảng một chu kỳ vân. |

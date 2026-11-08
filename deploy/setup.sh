@@ -79,7 +79,7 @@ Wants=network-online.target
 User=fpsys
 WorkingDirectory=$REPO
 EnvironmentFile=$ENV_FILE
-ExecStart=$REPO/.venv/bin/python -m server --host 127.0.0.1 --port $PORT --db $DATA/server.db --set enroll.min_consistency=0.08
+ExecStart=$REPO/.venv/bin/python -m server --host 127.0.0.1 --port $PORT --db $DATA/server.db --set sift.enabled=true --set matcher.method=sift --set enroll.consistency=max --set enroll.min_consistency=0.30 --set verify.threshold=0.30
 Restart=always
 RestartSec=5
 

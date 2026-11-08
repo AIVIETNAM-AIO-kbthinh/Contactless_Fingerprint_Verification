@@ -89,9 +89,10 @@ matcher:
     top_k: 3
     match_dist_px: 15
     match_angle_deg: 20
-enroll:   {min_templates: 2, min_consistency: 0.15}
+enroll:   {min_templates: 2, min_consistency: 0.15, consistency: median}   # median | max
 verify:   {threshold: 0.10, fusion: max}   # max | mean_top2; threshold thay bằng giá trị từ metrics.json (tập dev)
 fusion:   {enabled: false, model: models/embed.onnx, w: 0.5}   # M8
+sift:     {enabled: false, nfeatures: 1500, contrast: 0.02, ratio: 0.8, ransac_px: 8.0, k: 40.0}   # matcher.method=sift
 store:    {path: data/store.json}
 eval:     {dev_fraction: 0.4, target_far: 0.01, n_bootstrap: 1000}
 guide:                                   # hướng dẫn trực tiếp khi chụp (python -m demo); cần hiệu chỉnh

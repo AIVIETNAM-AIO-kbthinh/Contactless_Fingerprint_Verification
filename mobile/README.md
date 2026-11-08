@@ -1,4 +1,4 @@
-# App điện thoại (Flutter)
+# FingerCam: app điện thoại (Flutter)
 
 App chụp đầu ngón tay rồi gửi lên backend (`python -m server`) để **đăng ký** hoặc **xác thực**.
 Toàn bộ xử lý vân tay chạy trên server; app chỉ chụp ảnh và hiện kết quả. Đã thử trên Android
@@ -75,16 +75,16 @@ ngay, không cần nhập địa chỉ hay API key, không cần cáp hay chung 
 
 ## Cách dùng
 
-- **Đăng ký:** nhập tên, chọn ngón, chụp 3 mẫu. Mỗi mẫu được server kiểm tra ngay; mẫu mờ, tối hoặc
+- **Đăng ký:** nhập tên, chọn ngón, quét 5 mẫu theo 5 tư thế app yêu cầu (thẳng, nghiêng trái/phải, ngửa/cúi nhẹ). Mỗi mẫu được server kiểm tra ngay; mẫu mờ, tối hoặc
   không thấy ngón sẽ bị báo lý do và phải chụp lại.
 - **Xác thực:** chọn người và ngón, chụp 1 tấm. App hiện CHẤP NHẬN hoặc TỪ CHỐI, kèm điểm và ngưỡng.
 - **Người dùng:** xem danh sách, xóa người không muốn lưu dữ liệu nữa.
 - Khi chụp: đèn tự bật, camera tự zoom 2x. Đặt đầu ngón vào khung oval, cách **10–15 cm** (camera chính
   không lấy nét được gần hơn), mặt bụng ngón nhìn thẳng camera, **chạm vào giữa đầu ngón** để lấy nét.
   **App tự chụp** khi ảnh đủ nét và tay giữ yên ~1 giây (viền oval chuyển vàng, chạy vòng tiến độ). Nút
-  Chụp vẫn dùng được để chụp tay. Đăng ký: mẫu đạt thì app tự mở luôn lần chụp tiếp theo. Giữ cùng tư
-  thế cho cả 3 mẫu.
-- App chỉ tự chụp khi vùng giữa khung là màu da (≥ 70%), đủ sáng (≥ 110, nhờ đèn), đủ nét (≥ 0.017) và
+  Chụp vẫn dùng được để chụp tay. Đăng ký: mẫu đạt thì app tự mở luôn lần chụp tiếp theo, có ~1,5 giây để đổi
+  tư thế. Xác thực: chưa khớp hoặc ảnh chưa đạt thì app tự quét lại, tối đa 3 lần.
+- App chỉ tự chụp khi vùng giữa khung là màu da (≥ 70%), đủ sáng (≥ 110, nhờ đèn), đủ nét (≥ 0.028) và
   ổn định. Các ngưỡng đo trên 40 ảnh thật và nằm đầu `lib/capture_screen.dart`. Dòng chữ nhỏ dưới khung
   xem hiện số đo trực tiếp (`nét`, `da`, `sáng`); chỉnh ngưỡng theo số đó nếu máy khác không tự chụp.
 
@@ -105,8 +105,9 @@ ngay, không cần nhập địa chỉ hay API key, không cần cáp hay chung 
 | `lib/api.dart` | Gọi 5 endpoint của server, lưu địa chỉ server và API key |
 | `lib/capture_screen.dart` | Camera: độ phân giải tối đa, bật đèn, zoom 2x, chạm để lấy nét, khung oval, tự chụp khi đủ nét (`measureFocus`) |
 | `test/measure_focus_test.dart` | Kiểm tra hàm đo độ nét (`flutter test`) |
-| `lib/enroll_screen.dart` | Luồng đăng ký 3 mẫu |
+| `lib/enroll_screen.dart` | Luồng đăng ký 5 mẫu theo 5 tư thế |
 | `lib/verify_screen.dart` | Luồng xác thực |
 | `lib/users_screen.dart` | Danh sách và xóa người dùng |
 | `lib/main.dart` | Trang chủ và trang Cài đặt |
+| `lib/theme.dart` | Bảng màu tối và theme chung của app |
 | `android/gradle.properties` | `kotlin.incremental=false`: tránh lỗi Kotlin khi dự án và cache package ở hai ổ đĩa khác nhau |

@@ -6,13 +6,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Khớp FINGERS trong demo/session.py
 const fingers = {
-  'R1': 'Ngón cái phải', 'R2': 'Ngón trỏ phải', 'R3': 'Ngón giữa phải',
-  'R4': 'Ngón áp út phải', 'R5': 'Ngón út phải',
-  'L1': 'Ngón cái trái', 'L2': 'Ngón trỏ trái', 'L3': 'Ngón giữa trái',
-  'L4': 'Ngón áp út trái', 'L5': 'Ngón út trái',
+  'R1': 'Ngón cái phải',
+  'R2': 'Ngón trỏ phải',
+  'R3': 'Ngón giữa phải',
+  'R4': 'Ngón áp út phải',
+  'R5': 'Ngón út phải',
+  'L1': 'Ngón cái trái',
+  'L2': 'Ngón trỏ trái',
+  'L3': 'Ngón giữa trái',
+  'L4': 'Ngón áp út trái',
+  'L5': 'Ngón út trái',
 };
 
-const enrollSamples = 3; // guide.enroll_samples trong configs/default.yaml
+// mỗi mẫu một tư thế: mẫu đã lưu bao phủ nhiều góc nên lúc xác thực không phải căn đúng một góc
+const enrollPoses = [
+  'Để thẳng, bụng ngón nhìn thẳng camera',
+  'Nghiêng nhẹ ngón sang trái',
+  'Nghiêng nhẹ ngón sang phải',
+  'Đầu ngón hơi ngửa lên',
+  'Đầu ngón hơi cúi xuống',
+];
+final enrollSamples = enrollPoses.length;
 
 // Gắn lúc build APK: --dart-define=SERVER_URL=https://... --dart-define=API_KEY=...
 const _defaultUrl = String.fromEnvironment('SERVER_URL', defaultValue: 'http://192.168.1.5:8000');

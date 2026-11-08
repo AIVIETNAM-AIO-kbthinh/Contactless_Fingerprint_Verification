@@ -53,6 +53,7 @@ class Template:
     version: str = "fp-v1"
     embedding: list[float] | None = None  # M8; None khi không bật fusion
     meta: dict = field(default_factory=dict)  # cfg_hash, conf YOLO, quality, scale, angle...
+    sift: dict | None = None  # match_sift.extract_sift; None khi sift.enabled=false
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -62,6 +63,7 @@ class Template:
             "minutiae": [m.to_dict() for m in self.minutiae],
             "embedding": None if self.embedding is None else [float(v) for v in self.embedding],
             "meta": self.meta,
+            "sift": self.sift,
         }
 
     @classmethod
@@ -74,6 +76,7 @@ class Template:
             version=d.get("version", "fp-v1"),
             embedding=None if emb is None else [float(v) for v in emb],
             meta=dict(d.get("meta", {})),
+            sift=d.get("sift"),
         )
 
 

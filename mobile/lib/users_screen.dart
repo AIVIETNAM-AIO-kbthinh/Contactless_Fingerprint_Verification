@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'theme.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -33,14 +34,19 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   Future<void> _delete(String name) async {
-    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      title: Text('Xóa $name?'),
-      content: const Text('Toàn bộ mẫu vân tay của người này sẽ bị xóa vĩnh viễn.'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Xóa')),
-      ],
-    ));
+    final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+              title: Text('Xóa $name?'),
+              content: const Text('Toàn bộ mẫu vân tay của người này sẽ bị xóa vĩnh viễn.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Xóa', style: TextStyle(color: kBad)),
+                ),
+              ],
+            ));
     if (ok != true) return;
     try {
       await (await Api.load()).deleteUser(name);
@@ -64,25 +70,63 @@ class _UsersScreenState extends State<UsersScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: us.isEmpty
-                      ? ListView(children: const [
-                          Padding(padding: EdgeInsets.all(32),
-                              child: Center(child: Text('Chưa có ai đăng ký.'))),
+                      ? ListView(padding: const EdgeInsets.all(48), children: const [
+                          Icon(Icons.fingerprint, size: 72, color: kMuted),
+                          SizedBox(height: 12),
+                          Text('Chưa có ai đăng ký',
+                              textAlign: TextAlign.center, style: TextStyle(fontSize: 18)),
+                          SizedBox(height: 4),
+                          Text('Về trang chủ và chọn Đăng ký để thêm vân tay đầu tiên.',
+                              textAlign: TextAlign.center, style: TextStyle(color: kMuted)),
                         ])
-                      : ListView(children: [
-                          for (final u in us)
-                            ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(u['name'] as String),
-                              subtitle: Text((u['fingers'] as List)
-                                  .map((f) => fingers[f] ?? f).join(', ')),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Xóa',
-                                onPressed: () => _delete(u['name'] as String),
-                              ),
-                            ),
-                        ]),
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: us.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (_, i) => _userCard(us[i]),
+                        ),
                 ),
+    );
+  }
+
+  Widget _userCard(Map u) {
+    final name = u['name'] as String;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: kAccent.withValues(alpha: 0.16),
+            child: Text(name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+                style: const TextStyle(color: kAccent, fontSize: 20, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              Wrap(spacing: 6, runSpacing: 6, children: [
+                for (final f in u['fingers'] as List)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration:
+                        BoxDecoration(color: kField, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${fingers[f] ?? f}', style: const TextStyle(fontSize: 12)),
+                  ),
+              ]),
+            ]),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: kBad),
+            tooltip: 'Xóa',
+            onPressed: () => _delete(name),
+          ),
+        ]),
+      ),
     );
   }
 }

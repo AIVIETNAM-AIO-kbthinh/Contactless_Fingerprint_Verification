@@ -15,6 +15,7 @@ from . import viz
 from .config import Config, cfg_hash, default_config
 from .detect import Detection, detect
 from .enhance import enhance
+from .match_sift import extract_sift
 from .minutiae import extract_minutiae
 from .normalize import normalize
 from .quality import assess
@@ -117,8 +118,9 @@ def run(image: np.ndarray, cfg: Config | None = None, collect: bool = False) -> 
             "n_minutiae": len(mins),
             "timing_ms": dict(tr.timing_ms),
         }
+        sift = extract_sift(enh.flat, norm.mask, cfg.sift) if cfg.sift.enabled else None
         tr.template = Template(mins, (int(norm.gray.shape[0]), int(norm.gray.shape[1])),
-                               float(norm.ridge_period), embedding=emb, meta=meta)
+                               float(norm.ridge_period), embedding=emb, meta=meta, sift=sift)
     except CaptureError as e:
         tr.error = e
         tr.timing_ms["total"] = round((time.perf_counter() - t_all) * 1000.0, 2)

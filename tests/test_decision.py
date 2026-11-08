@@ -1,7 +1,7 @@
 import pytest
 from synth import perturb_template, random_template, transform_template
 
-from fpsys.config import load_config
+from fpsys.config import apply_overrides, load_config
 from fpsys.decision import fuse_scores, select_enrollment, verify
 from fpsys.types import CaptureError, ErrorCode
 
@@ -27,6 +27,20 @@ def test_select_enrollment_inconsistent(cfg):
     assert ei.value.code is ErrorCode.INCONSISTENT_ENROLL
     with pytest.raises(CaptureError):
         select_enrollment([random_template(seed=0)], cfg)
+
+
+def test_select_enrollment_max_giu_mau_chi_khop_mot_mau(cfg):
+    a, b = _genuine_set(n=2)
+    outliers = [random_template(seed=s) for s in (901, 902)]
+    with pytest.raises(CaptureError):
+        select_enrollment([a, b, *outliers], cfg)  # median: a, b đều bị 2 mẫu lạ kéo xuống
+    kept = select_enrollment([a, b, *outliers], apply_overrides(cfg, ["enroll.consistency=max"]))
+    assert kept == [a, b]
+
+
+def test_select_enrollment_consistency_la(cfg):
+    with pytest.raises(ValueError):
+        select_enrollment(_genuine_set(), apply_overrides(cfg, ["enroll.consistency=x"]))
 
 
 def test_verify_accepts_genuine_rejects_impostor(cfg):

@@ -162,7 +162,7 @@ class HoughCfg:
 
 @dataclass
 class MatcherCfg:
-    method: str = "mcc"  # mcc | hough
+    method: str = "mcc"  # mcc | hough | sift (cần sift.enabled=true khi trích xuất)
     mcc: MccCfg = field(default_factory=MccCfg)
     hough: HoughCfg = field(default_factory=HoughCfg)
 
@@ -171,6 +171,7 @@ class MatcherCfg:
 class EnrollCfg:
     min_templates: int = 2
     min_consistency: float = 0.15
+    consistency: str = "median"  # median | max (chỉ cần khớp một mẫu khác: cho phép đổi góc)
 
 
 @dataclass
@@ -184,6 +185,18 @@ class FusionCfg:
     enabled: bool = False
     model: str = "models/embed.onnx"
     w: float = 0.5
+
+
+@dataclass
+class SiftCfg:
+    """So khớp SIFT (match_sift.py). Tắt mặc định, không thuộc cfg_hash."""
+
+    enabled: bool = False
+    nfeatures: int = 1500
+    contrast: float = 0.02
+    ratio: float = 0.8  # Lowe ratio test
+    ransac_px: float = 8.0
+    k: float = 40.0  # điểm = n / (n + k), n là số cặp khớp hình học
 
 
 @dataclass
@@ -225,6 +238,7 @@ class Config:
     enroll: EnrollCfg = field(default_factory=EnrollCfg)
     verify: VerifyCfg = field(default_factory=VerifyCfg)
     fusion: FusionCfg = field(default_factory=FusionCfg)
+    sift: SiftCfg = field(default_factory=SiftCfg)
     store: StoreCfg = field(default_factory=StoreCfg)
     eval: EvalCfg = field(default_factory=EvalCfg)
     guide: GuideCfg = field(default_factory=GuideCfg)

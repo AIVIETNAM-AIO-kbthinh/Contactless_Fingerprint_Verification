@@ -7,12 +7,16 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'theme.dart';
+
 // shortcut: ngưỡng đo trên 40 ảnh thật (data/test, thu về 1280×960); máy khác có thể cần chỉnh
 // theo dòng chẩn đoán dưới khung xem
-const _sharpMin = 0.017; // 37/40 ảnh thật đạt (nét 0.013–0.038); làm mờ 2 px còn trung vị ~0.014
+const _sharpMin =
+    0.028; // mức thấp nhất trong các ảnh server nhận; dưới mức này ảnh thường bị báo mờ
 const _skinMin = 0.7; // ảnh thật: 73–100% vùng giữa là màu da
 // ngón được đèn chiếu ở 10–15 cm luôn sáng (ảnh thật 133–198); tường/nền thường tối hơn nhiều
 const _brightMin = 110;
+const _settleMs = 1500; // chờ sau khi mở camera để kịp đổi tư thế giữa các mẫu
 const _need = 5; // số lần đạt liên tiếp (mỗi lần cách ~200 ms) trước khi tự chụp
 
 /// Đo vùng giữa 30%×30% của khung YUV420 (lấy mẫu cách 2 px):
@@ -46,7 +50,8 @@ const _need = 5; // số lần đạt liên tiếp (mỗi lần cách ~200 ms) t
 
 class CaptureScreen extends StatefulWidget {
   final String title;
-  const CaptureScreen({super.key, required this.title});
+  final String? pose; // tư thế cần giữ cho mẫu này (đăng ký)
+  const CaptureScreen({super.key, required this.title, this.pose});
 
   @override
   State<CaptureScreen> createState() => _CaptureScreenState();
@@ -59,6 +64,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _scanning = false;
   int _streak = 0;
   int _lastMs = 0;
+  int _startMs = 0;
   double _lastSharp = 0;
   String _hint = 'Đưa đầu ngón vào khung, app sẽ tự chụp';
   String _diag = '';
@@ -100,6 +106,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   Future<void> _startScan() async {
     try {
+      _startMs = DateTime.now().millisecondsSinceEpoch;
       await _c!.startImageStream(_onFrame);
       if (mounted) setState(() => _scanning = true);
     } catch (e) {
@@ -110,7 +117,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   void _onFrame(CameraImage img) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (_busy || !mounted || now - _lastMs < 200) return;
+    if (_busy || !mounted || now - _lastMs < 200 || now - _startMs < _settleMs) return;
     _lastMs = now;
     final p = img.planes;
     final m = p.length >= 3
@@ -180,64 +187,116 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Widget build(BuildContext context) {
     final c = _c;
     final color = _busy
-        ? Colors.greenAccent
+        ? kOk
         : _streak > 0
             ? Colors.amber
-            : Colors.white;
+            : kAccent;
     final status = _busy
         ? 'Đang chụp…'
         : _scanning
             ? _hint
-            : 'Bấm Chụp khi ngón đã nét';
+            : 'Bấm nút chụp khi ngón đã nét';
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(title: Text(widget.title)),
       body: _error != null
           ? Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(_error!)))
           : c == null
               ? const Center(child: CircularProgressIndicator())
-              : Column(children: [
-                  Expanded(
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: 1 / c.value.aspectRatio, // máy dọc
-                        child: LayoutBuilder(
-                          builder: (ctx, box) => GestureDetector(
-                            onTapUp: (d) => _focus(d, box),
-                            child: Stack(fit: StackFit.expand, children: [
-                              CameraPreview(c),
-                              CustomPaint(painter: _OvalGuide(color, _busy ? 1 : _streak / _need)),
-                            ]),
+              : SafeArea(
+                  child: Column(children: [
+                    if (widget.pose != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Text(widget.pose!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(color: kAccent, fontWeight: FontWeight.w600)),
+                      ),
+                    Expanded(
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: 1 / c.value.aspectRatio, // máy dọc
+                          child: LayoutBuilder(
+                            builder: (ctx, box) => GestureDetector(
+                              onTapUp: (d) => _focus(d, box),
+                              child: Stack(fit: StackFit.expand, children: [
+                                CameraPreview(c),
+                                CustomPaint(
+                                    painter: _OvalGuide(color, _busy ? 1 : _streak / _need)),
+                                Positioned(
+                                  left: 16,
+                                  right: 16,
+                                  bottom: 16,
+                                  child: IgnorePointer(
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.7),
+                                          borderRadius: BorderRadius.circular(24),
+                                          border: Border.all(color: color.withValues(alpha: 0.6)),
+                                        ),
+                                        child: Text(status,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                                color: Colors.white, fontWeight: FontWeight.w600)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ]),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                    child: Text(status,
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
+                      child: Text(
+                        'Một ngón, bụng ngón hướng vào camera · cách 10–15 cm · '
+                        'chạm vào ngón để lấy nét',
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium),
-                  ),
-                  if (_diag.isNotEmpty)
-                    Text(_diag,
-                        textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'Một ngón, mặt bụng ngón hướng vào camera · cách 10–15 cm · '
-                      'chạm vào đầu ngón trên màn hình để lấy nét',
-                      textAlign: TextAlign.center,
+                        style: TextStyle(color: kMuted, fontSize: 13),
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: FilledButton.icon(
-                      onPressed: _busy ? null : _shoot,
-                      icon: const Icon(Icons.camera_alt),
-                      label: Text(_busy ? 'Đang chụp…' : 'Chụp'),
+                    if (_diag.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(_diag,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: kMuted.withValues(alpha: 0.7), fontSize: 11)),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                        ),
+                        child: SizedBox(
+                          width: 62,
+                          height: 62,
+                          child: IconButton.filled(
+                            tooltip: 'Chụp',
+                            iconSize: 28,
+                            onPressed: _busy ? null : _shoot,
+                            icon: _busy
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5))
+                                : const Icon(Icons.camera_alt),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ]),
+                  ]),
+                ),
     );
   }
 }
@@ -255,22 +314,26 @@ class _OvalGuide extends CustomPainter {
       ..addRect(Offset.zero & s)
       ..addOval(oval)
       ..fillType = PathFillType.evenOdd;
-    canvas.drawPath(dim, Paint()..color = Colors.black45);
+    canvas.drawPath(dim, Paint()..color = Colors.black54);
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
     canvas.drawOval(
         oval,
         Paint()
-          ..color = color
+          ..color = color.withValues(alpha: 0.6)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3);
+          ..strokeWidth = 8
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+    canvas.drawOval(oval, stroke);
     if (progress > 0) {
       canvas.drawArc(
           oval.inflate(8),
           -pi / 2,
           2 * pi * progress,
           false,
-          Paint()
-            ..color = color
-            ..style = PaintingStyle.stroke
+          stroke
             ..strokeWidth = 6
             ..strokeCap = StrokeCap.round);
     }

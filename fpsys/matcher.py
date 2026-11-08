@@ -5,6 +5,7 @@ from __future__ import annotations
 from .config import Config, default_config
 from .match_hough import match_hough
 from .match_mcc import match_mcc
+from .match_sift import match_sift
 from .types import Template, TemplateMismatchError
 
 
@@ -21,6 +22,10 @@ def match(probe: Template, ref: Template, cfg: Config | None = None) -> float:
     """Điểm tương đồng trong [0, 1], đối xứng: match(a, b) == match(b, a)."""
     cfg = cfg or default_config()
     check_compatible(probe, ref)
+    if cfg.matcher.method == "sift":
+        if probe.sift is None or ref.sift is None:
+            raise TemplateMismatchError("template không có dữ liệu SIFT (cần enroll lại)")
+        return float(min(1.0, max(0.0, match_sift(probe.sift, ref.sift, cfg.sift))))
     if len(probe.minutiae) < 3 or len(ref.minutiae) < 3:
         return 0.0
     method = cfg.matcher.method

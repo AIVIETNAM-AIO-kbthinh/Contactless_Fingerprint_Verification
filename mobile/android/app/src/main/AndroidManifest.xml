@@ -1,7 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- allowBackup=false: cài lại không khôi phục địa chỉ/key cũ đè lên giá trị gắn trong APK -->
     <application
+        android:allowBackup="false"
         android:usesCleartextTraffic="true"
         android:label="fpsys_app"
         android:name="${applicationName}"

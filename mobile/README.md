@@ -80,8 +80,13 @@ ngay, không cần nhập địa chỉ hay API key, không cần cáp hay chung 
 - **Xác thực:** chọn người và ngón, chụp 1 tấm. App hiện CHẤP NHẬN hoặc TỪ CHỐI, kèm điểm và ngưỡng.
 - **Người dùng:** xem danh sách, xóa người không muốn lưu dữ liệu nữa.
 - Khi chụp: đèn tự bật, camera tự zoom 2x. Đặt đầu ngón vào khung oval, cách **10–15 cm** (camera chính
-  không lấy nét được gần hơn), mặt bụng ngón nhìn thẳng camera, **chạm vào giữa đầu ngón** để lấy nét,
-  chờ 1 giây rồi bấm Chụp. Giữ cùng tư thế cho cả 3 mẫu đăng ký.
+  không lấy nét được gần hơn), mặt bụng ngón nhìn thẳng camera, **chạm vào giữa đầu ngón** để lấy nét.
+  **App tự chụp** khi ảnh đủ nét và tay giữ yên ~1 giây (viền oval chuyển vàng, chạy vòng tiến độ). Nút
+  Chụp vẫn dùng được để chụp tay. Đăng ký: mẫu đạt thì app tự mở luôn lần chụp tiếp theo. Giữ cùng tư
+  thế cho cả 3 mẫu.
+- App chỉ tự chụp khi vùng giữa khung là màu da (≥ 70%), đủ sáng (≥ 110, nhờ đèn), đủ nét (≥ 0.017) và
+  ổn định. Các ngưỡng đo trên 40 ảnh thật và nằm đầu `lib/capture_screen.dart`. Dòng chữ nhỏ dưới khung
+  xem hiện số đo trực tiếp (`nét`, `da`, `sáng`); chỉnh ngưỡng theo số đó nếu máy khác không tự chụp.
 
 ## Xử lý sự cố
 
@@ -98,7 +103,8 @@ ngay, không cần nhập địa chỉ hay API key, không cần cáp hay chung 
 | File | Nội dung |
 | --- | --- |
 | `lib/api.dart` | Gọi 5 endpoint của server, lưu địa chỉ server và API key |
-| `lib/capture_screen.dart` | Camera: độ phân giải tối đa, bật đèn, zoom 2x, chạm để lấy nét, khung oval |
+| `lib/capture_screen.dart` | Camera: độ phân giải tối đa, bật đèn, zoom 2x, chạm để lấy nét, khung oval, tự chụp khi đủ nét (`measureFocus`) |
+| `test/measure_focus_test.dart` | Kiểm tra hàm đo độ nét (`flutter test`) |
 | `lib/enroll_screen.dart` | Luồng đăng ký 3 mẫu |
 | `lib/verify_screen.dart` | Luồng xác thực |
 | `lib/users_screen.dart` | Danh sách và xóa người dùng |

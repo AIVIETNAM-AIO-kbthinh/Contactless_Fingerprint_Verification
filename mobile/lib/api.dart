@@ -33,7 +33,13 @@ class Api {
 
   static Future<Api> load() async {
     final p = await SharedPreferences.getInstance();
-    return Api(p.getString('url') ?? _defaultUrl, p.getString('key') ?? _defaultKey);
+    // ô để trống trong Cài đặt nghĩa là dùng giá trị gắn lúc build
+    String pick(String k, String def) {
+      final v = p.getString(k) ?? '';
+      return v.isEmpty ? def : v;
+    }
+
+    return Api(pick('url', _defaultUrl), pick('key', _defaultKey));
   }
 
   static Future<void> save(String url, String key) async {

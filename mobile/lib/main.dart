@@ -33,29 +33,34 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => _open(context, const SettingsScreen()),
           ),
         ]),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.fingerprint, size: 96),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () => _open(context, const EnrollScreen()),
-              icon: const Icon(Icons.person_add),
-              label: const Text('Đăng ký'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () => _open(context, const VerifyScreen()),
-              icon: const Icon(Icons.verified_user),
-              label: const Text('Xác thực'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _open(context, const UsersScreen()),
-              icon: const Icon(Icons.people),
-              label: const Text('Người dùng'),
-            ),
-          ]),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280),
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.fingerprint, size: 96),
+                  const SizedBox(height: 32),
+                  FilledButton.icon(
+                    onPressed: () => _open(context, const EnrollScreen()),
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Đăng ký'),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () => _open(context, const VerifyScreen()),
+                    icon: const Icon(Icons.verified_user),
+                    label: const Text('Xác thực'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _open(context, const UsersScreen()),
+                    icon: const Icon(Icons.people),
+                    label: const Text('Người dùng'),
+                  ),
+                ]),
+          ),
         ),
       );
 }

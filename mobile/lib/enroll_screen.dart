@@ -33,6 +33,7 @@ class _EnrollScreenState extends State<EnrollScreen> {
     final path = await Navigator.push<String>(context, MaterialPageRoute(
         builder: (_) => CaptureScreen(title: 'Mẫu ${_shots.length + 1}/$enrollSamples')));
     if (path == null) return;
+    var next = false;
     await _run((api) async {
       setState(() => _status = 'Đang kiểm tra ảnh…');
       final r = await api.check(path);
@@ -40,11 +41,14 @@ class _EnrollScreenState extends State<EnrollScreen> {
         if (r['ok'] == true) {
           _shots.add(path);
           _status = 'Mẫu ${_shots.length} đạt (${r['n_minutiae']} điểm đặc trưng).';
+          next = _shots.length < enrollSamples;
         } else {
           _status = '${r['message']} Hãy chụp lại.';
         }
       });
     });
+    // mẫu đạt: mở luôn màn chụp mẫu tiếp; mẫu hỏng thì dừng để người dùng đọc lý do
+    if (next && mounted) await _capture();
   }
 
   Future<void> _enroll() async {
